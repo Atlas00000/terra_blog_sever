@@ -13,10 +13,11 @@ const error_middleware_1 = require("./error.middleware");
 /**
  * General API rate limiter
  * 100 requests per 15 minutes per IP
+ * Disabled in test environment
  */
 exports.apiLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: process.env.NODE_ENV === 'test' ? 10000 : 100, // Very high limit in test environment
     message: {
         error: {
             code: 'TOO_MANY_REQUESTS',
@@ -30,14 +31,16 @@ exports.apiLimiter = (0, express_rate_limit_1.default)({
     handler: (req, res) => {
         throw new error_middleware_1.AppError('TOO_MANY_REQUESTS', 'Too many requests from this IP, please try again later', 429);
     },
+    skip: () => process.env.NODE_ENV === 'test', // Skip rate limiting in tests
 });
 /**
  * Strict rate limiter for authentication endpoints
  * 5 requests per 15 minutes per IP
+ * Disabled in test environment
  */
 exports.authLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 login attempts per windowMs
+    max: process.env.NODE_ENV === 'test' ? 10000 : 5, // Very high limit in test environment
     message: {
         error: {
             code: 'TOO_MANY_AUTH_REQUESTS',
@@ -52,6 +55,7 @@ exports.authLimiter = (0, express_rate_limit_1.default)({
     handler: (req, res) => {
         throw new error_middleware_1.AppError('TOO_MANY_AUTH_REQUESTS', 'Too many authentication attempts, please try again later', 429);
     },
+    skip: () => process.env.NODE_ENV === 'test', // Skip rate limiting in tests
 });
 /**
  * Strict rate limiter for contact form submissions

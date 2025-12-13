@@ -95,7 +95,12 @@ function validateDocument(file) {
  * Get file extension from filename
  */
 function getFileExtension(filename) {
-    return filename.split('.').pop()?.toLowerCase() || '';
+    const parts = filename.split('.');
+    // If there's no dot or only one part, return empty string
+    if (parts.length <= 1) {
+        return '';
+    }
+    return parts.pop()?.toLowerCase() || '';
 }
 /**
  * Generate unique filename

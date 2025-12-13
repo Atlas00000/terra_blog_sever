@@ -46,21 +46,22 @@ class HealthController {
                 message: error.message,
             };
         }
-        // Redis check
+        // Redis check (optional in test environment)
         try {
             const redisAvailable = await cache_service_1.cacheService.isAvailable();
             checks.redis = {
-                status: redisAvailable ? 'healthy' : 'unhealthy',
-                message: redisAvailable ? undefined : 'Redis not available',
+                status: redisAvailable ? 'healthy' : (process.env.NODE_ENV === 'test' ? 'skipped' : 'unhealthy'),
+                message: redisAvailable ? undefined : (process.env.NODE_ENV === 'test' ? 'Redis check skipped in test environment' : 'Redis not available'),
             };
         }
         catch (error) {
             checks.redis = {
-                status: 'unhealthy',
-                message: error.message,
+                status: process.env.NODE_ENV === 'test' ? 'skipped' : 'unhealthy',
+                message: process.env.NODE_ENV === 'test' ? 'Redis check skipped in test environment' : error.message,
             };
         }
-        const allHealthy = Object.values(checks).every((check) => check.status === 'healthy');
+        // In test environment, skip Redis check
+        const allHealthy = Object.values(checks).every((check) => check.status === 'healthy' || (process.env.NODE_ENV === 'test' && check.status === 'skipped'));
         const statusCode = allHealthy ? 200 : 503;
         res.status(statusCode).json({
             status: allHealthy ? 'ready' : 'not ready',

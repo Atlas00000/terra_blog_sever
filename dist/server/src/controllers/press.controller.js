@@ -8,10 +8,26 @@ class PressController {
      */
     async getAll(req, res, next) {
         try {
+            const featuredParam = req.query.featured;
+            let featured;
+            // Handle string 'true'/'false' only (query params are always strings)
+            // Express query params can be string, string[], or ParsedQs, so we need to handle that
+            if (featuredParam !== undefined) {
+                const featuredStr = Array.isArray(featuredParam)
+                    ? String(featuredParam[0])
+                    : String(featuredParam);
+                if (featuredStr === 'true') {
+                    featured = true;
+                }
+                else if (featuredStr === 'false') {
+                    featured = false;
+                }
+                // If featuredStr is any other value, featured remains undefined
+            }
             const params = {
                 page: parseInt(req.query.page) || 1,
                 limit: parseInt(req.query.limit) || 20,
-                featured: req.query.featured === 'true' ? true : req.query.featured === 'false' ? false : undefined,
+                featured,
                 search: req.query.search,
             };
             const result = await press_service_1.pressReleasesService.getAll(params);

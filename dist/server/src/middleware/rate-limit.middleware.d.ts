@@ -5,11 +5,13 @@
 /**
  * General API rate limiter
  * 100 requests per 15 minutes per IP
+ * Disabled in test environment
  */
 export declare const apiLimiter: import("express-rate-limit").RateLimitRequestHandler;
 /**
  * Strict rate limiter for authentication endpoints
  * 5 requests per 15 minutes per IP
+ * Disabled in test environment
  */
 export declare const authLimiter: import("express-rate-limit").RateLimitRequestHandler;
 /**

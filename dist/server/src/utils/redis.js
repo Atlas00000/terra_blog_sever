@@ -10,7 +10,9 @@ exports.redisClient.on('error', (err) => {
     console.error('Redis Client Error:', err);
 });
 exports.redisClient.on('connect', () => {
-    console.log('✅ Redis connected');
+    if (process.env.NODE_ENV !== 'test') {
+        console.log('✅ Redis connected');
+    }
 });
 // Connect to Redis
 if (!exports.redisClient.isOpen) {

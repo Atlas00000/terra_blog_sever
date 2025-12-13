@@ -2,9 +2,29 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.prisma = void 0;
 const client_1 = require("@prisma/client");
+const dotenv_1 = require("dotenv");
+// Load test environment if in test mode
+if (process.env.NODE_ENV === 'test') {
+    (0, dotenv_1.config)({ path: '.env.test' });
+}
 const globalForPrisma = globalThis;
+// Use test database URL if in test environment
+const getDatabaseUrl = () => {
+    if (process.env.NODE_ENV === 'test') {
+        return process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+    }
+    return undefined; // Use default from DATABASE_URL env var
+};
+const databaseUrl = getDatabaseUrl();
 exports.prisma = globalForPrisma.prisma ??
     new client_1.PrismaClient({
+        datasources: databaseUrl
+            ? {
+                db: {
+                    url: databaseUrl,
+                },
+            }
+            : undefined,
         log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
 if (process.env.NODE_ENV !== 'production') {

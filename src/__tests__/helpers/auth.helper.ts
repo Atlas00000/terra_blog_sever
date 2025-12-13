@@ -1,5 +1,5 @@
 import { Role } from '@prisma/client';
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import { env } from '../../../src/config/env';
 
 /**
@@ -14,8 +14,8 @@ export function generateToken(userId: string, role: Role = Role.AUTHOR): string 
     },
     env.JWT_SECRET,
     {
-      expiresIn: env.JWT_EXPIRES_IN as string,
-    }
+      expiresIn: String(env.JWT_EXPIRES_IN),
+    } as SignOptions
   );
 }
 

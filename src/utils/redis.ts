@@ -1,9 +1,10 @@
 import { createClient } from 'redis';
+import type { RedisClientType } from 'redis';
 import { env } from '../config/env';
 
 export const redisClient = createClient({
   url: env.REDIS_URL,
-});
+}) as RedisClientType;
 
 redisClient.on('error', (err) => {
   console.error('Redis Client Error:', err);
@@ -20,5 +21,5 @@ if (!redisClient.isOpen) {
   redisClient.connect().catch(console.error);
 }
 
-export const redis = redisClient;
+export const redis: RedisClientType = redisClient;
 
