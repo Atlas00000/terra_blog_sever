@@ -1,0 +1,156 @@
+import { Request, Response } from 'express';
+import prisma from '../lib/prisma';
+import { cacheService } from '../services/cache.service';
+import { env } from '../config/env';
+
+export class HealthController {
+  /**
+   * Basic health check
+   * GET /health
+   */
+  async basic(req: Request, res: Response) {
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      version: env.APP_VERSION,
+    });
+  }
+
+  /**
+   * Liveness probe
+   * GET /health/live
+   */
+  async live(req: Request, res: Response) {
+    res.json({
+      status: 'alive',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Readiness probe
+   * GET /health/ready
+   */
+  async ready(req: Request, res: Response) {
+    const checks: Record<string, { status: string; message?: string }> = {};
+
+    // Database check
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      checks.database = { status: 'healthy' };
+    } catch (error: any) {
+      checks.database = {
+        status: 'unhealthy',
+        message: error.message,
+      };
+    }
+
+    // Redis check (optional in test environment)
+    try {
+      const redisAvailable = await cacheService.isAvailable();
+      checks.redis = {
+        status: redisAvailable ? 'healthy' : (process.env.NODE_ENV === 'test' ? 'skipped' : 'unhealthy'),
+        message: redisAvailable ? undefined : (process.env.NODE_ENV === 'test' ? 'Redis check skipped in test environment' : 'Redis not available'),
+      };
+    } catch (error: any) {
+      checks.redis = {
+        status: process.env.NODE_ENV === 'test' ? 'skipped' : 'unhealthy',
+        message: process.env.NODE_ENV === 'test' ? 'Redis check skipped in test environment' : error.message,
+      };
+    }
+
+    // In test environment, skip Redis check
+    const allHealthy = Object.values(checks).every((check) => 
+      check.status === 'healthy' || (process.env.NODE_ENV === 'test' && check.status === 'skipped')
+    );
+
+    const statusCode = allHealthy ? 200 : 503;
+
+    res.status(statusCode).json({
+      status: allHealthy ? 'ready' : 'not ready',
+      timestamp: new Date().toISOString(),
+      checks,
+    });
+  }
+
+  /**
+   * Detailed health check
+   * GET /health/detailed
+   */
+  async detailed(req: Request, res: Response) {
+    const checks: Record<string, any> = {};
+
+    // Database check
+    try {
+      const start = Date.now();
+      await prisma.$queryRaw`SELECT 1`;
+      const latency = Date.now() - start;
+
+      // Get database stats
+      const [userCount, postCount] = await Promise.all([
+        prisma.user.count(),
+        prisma.post.count({ where: { deletedAt: null } }),
+      ]);
+
+      checks.database = {
+        status: 'healthy',
+        latency: `${latency}ms`,
+        stats: {
+          users: userCount,
+          posts: postCount,
+        },
+      };
+    } catch (error: any) {
+      checks.database = {
+        status: 'unhealthy',
+        error: error.message,
+      };
+    }
+
+    // Redis check
+    try {
+      const start = Date.now();
+      const redisAvailable = await cacheService.isAvailable();
+      const latency = Date.now() - start;
+
+      checks.redis = {
+        status: redisAvailable ? 'healthy' : 'unhealthy',
+        latency: `${latency}ms`,
+        available: redisAvailable,
+      };
+    } catch (error: any) {
+      checks.redis = {
+        status: 'unhealthy',
+        error: error.message,
+      };
+    }
+
+    // System info
+    checks.system = {
+      nodeVersion: process.version,
+      platform: process.platform,
+      uptime: `${Math.floor(process.uptime())}s`,
+      memory: {
+        used: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
+        total: `${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)}MB`,
+      },
+    };
+
+    const allHealthy = Object.values(checks)
+      .filter((check) => check.status !== undefined)
+      .every((check) => check.status === 'healthy');
+
+    const statusCode = allHealthy ? 200 : 503;
+
+    res.status(statusCode).json({
+      status: allHealthy ? 'healthy' : 'unhealthy',
+      timestamp: new Date().toISOString(),
+      version: env.APP_VERSION,
+      environment: env.NODE_ENV,
+      checks,
+    });
+  }
+}
+
+export const healthController = new HealthController();
+

@@ -1,0 +1,243 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String    // hashed
+  role          Role      @default(AUTHOR)
+  bio           String?   // Author bio
+  avatar        String?   // Avatar image URL
+  slug          String?   @unique // Author page slug
+  socialLinks   Json?     // { linkedin, twitter, email }
+  posts         Post[]
+  comments      Comment[]
+  auditLogs     AuditLog[]
+  mediaUploads  Media[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([slug])
+  @@map("users")
+}
+
+model Post {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  excerpt       String?
+  content       String    // Rich text (JSON or Markdown)
+  coverImage    String?   // Cloudflare R2 URL
+  status        PostStatus @default(DRAFT)
+  readingTime   Int?      // Reading time in minutes
+  authorId      String
+  author        User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  categories    Category[]
+  tags          Tag[]
+  comments      Comment[]
+  products      Product[] // Related products
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // Soft delete
+
+  @@index([slug])
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Category {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  slug          String    @unique
+  description   String?
+  posts         Post[]
+  createdAt     DateTime  @default(now())
+
+  @@index([slug])
+  @@map("categories")
+}
+
+model Tag {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  slug          String    @unique
+  description   String?
+  posts         Post[]
+  createdAt     DateTime  @default(now())
+
+  @@index([slug])
+  @@map("tags")
+}
+
+model Comment {
+  id            String    @id @default(cuid())
+  postId        String
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId      String?   // For threaded comments
+  parent        Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Comment[] @relation("CommentReplies")
+  authorName    String
+  authorEmail   String
+  authorUrl     String?   // Website URL (optional)
+  content       String
+  status        CommentStatus @default(PENDING)
+  userId        String?   // If logged in user
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([postId])
+  @@index([parentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("comments")
+}
+
+model NewsletterSubscriber {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  status        SubscriberStatus @default(PENDING)
+  preferences   Json?     // Category preferences
+  confirmedAt   DateTime?
+  unsubscribedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@map("newsletter_subscribers")
+}
+
+model ContactSubmission {
+  id            String    @id @default(cuid())
+  name          String
+  email         String
+  subject       String
+  message       String
+  status        ContactStatus @default(PENDING)
+  respondedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_submissions")
+}
+
+model PressRelease {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  excerpt       String?
+  content       String
+  publishedAt   DateTime
+  featured      Boolean   @default(false)
+  mediaKitUrl   String?   // Link to media kit
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([publishedAt])
+  @@index([featured])
+  @@map("press_releases")
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  slug          String    @unique
+  description   String
+  features      Json      // Array of features
+  specifications Json?    // Technical specs
+  images        String[]  // Image URLs
+  videos        String[]  // Video URLs
+  posts         Post[]    // Blog posts about this product
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([slug])
+  @@map("products")
+}
+
+model Media {
+  id            String    @id @default(cuid())
+  originalUrl   String    // Cloudflare R2 URL
+  optimizedUrl  String    // Cloudflare Images optimized URL
+  thumbnailUrl  String?   // Thumbnail URL
+  fileName      String
+  fileSize      Int       // Size in bytes
+  mimeType      String
+  uploadedById  String?
+  uploadedBy    User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@map("media")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  resource   String   // POST, USER, etc.
+  resourceId String?  // ID of the resource
+  userId     String?  // User who performed the action
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  changes    Json?    // Before/after changes
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum Role {
+  ADMIN
+  AUTHOR
+  EDITOR
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum SubscriberStatus {
+  PENDING
+  CONFIRMED
+  UNSUBSCRIBED
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SPAM
+}
+
+enum ContactStatus {
+  PENDING
+  RESPONDED
+  ARCHIVED
+}
+

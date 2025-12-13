@@ -1,0 +1,1 @@
+{"version":3,"file":"test-auth.d.ts","sourceRoot":"","sources":["../../../../src/scripts/test-auth.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAQH,UAAU,UAAU;IAClB,IAAI,EAAE,MAAM,CAAC;IACb,MAAM,EAAE,OAAO,CAAC;IAChB,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,IAAI,CAAC,EAAE,GAAG,CAAC;CACZ;AAED,QAAA,MAAM,OAAO,EAAE,UAAU,EAAO,CAAC;AA0QjC,iBAAe,YAAY;;;;;GAuB1B;AAcD,OAAO,EAAE,YAAY,EAAE,OAAO,EAAE,CAAC"}
