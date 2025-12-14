@@ -389,8 +389,10 @@ class PostsService {
     }
 
     // Update post
+    // Remove relation IDs from updateData as they're handled separately
+    const { categoryIds, tagIds, productIds, ...postData } = data;
     const updateData: any = {
-      ...data,
+      ...postData,
       readingTime,
     };
 
