@@ -2,64 +2,62 @@ import { Router } from 'express';
 import { commentsController } from '../../controllers/comments.controller';
 import { validate } from '../../middleware/validation.middleware';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
-import { commentLimiter } from '../../middleware/rate-limit.middleware';
+import { apiLimiter } from '../../middleware/rate-limit.middleware';
 import {
   createCommentSchema,
-  updateCommentSchema,
-  getCommentsQuerySchema,
-  getCommentParamsSchema,
+  listCommentsQuerySchema,
+  adminListCommentsQuerySchema,
+  updateCommentStatusSchema,
+  postSlugParamsSchema,
 } from '../../../../shared/src/schemas/comment.schema';
-import { z } from 'zod';
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
-// GET /api/v1/comments (public, but can filter by status for admin)
+// Public: list comments for a post
 router.get(
-  '/',
-  validate(getCommentsQuerySchema, 'query'),
-  commentsController.getAll.bind(commentsController)
+  '/posts/:slug/comments',
+  apiLimiter,
+  validate(listCommentsQuerySchema, 'query'),
+  validate(postSlugParamsSchema, 'params'),
+  commentsController.listForPost.bind(commentsController)
 );
 
-// GET /api/v1/comments/:id (public)
-router.get(
-  '/:id',
-  validate(getCommentParamsSchema, 'params'),
-  commentsController.getById.bind(commentsController)
-);
-
-// POST /api/v1/comments (public, but can include userId if authenticated)
+// Public: create comment (pending)
 router.post(
-  '/',
-  commentLimiter,
+  '/posts/:slug/comments',
+  apiLimiter,
   validate(createCommentSchema, 'body'),
+  validate(postSlugParamsSchema, 'params'),
   commentsController.create.bind(commentsController)
 );
 
-// PUT /api/v1/comments/:id (protected)
-router.put(
-  '/:id',
-  authenticate,
-  validate(getCommentParamsSchema, 'params'),
-  validate(updateCommentSchema, 'body'),
-  commentsController.update.bind(commentsController)
-);
-
-// DELETE /api/v1/comments/:id (protected)
-router.delete(
-  '/:id',
-  authenticate,
-  validate(getCommentParamsSchema, 'params'),
-  commentsController.delete.bind(commentsController)
-);
-
-// PUT /api/v1/comments/:id/moderate (protected, admin/editor only)
-router.put(
-  '/:id/moderate',
+// Admin: list comments
+router.get(
+  '/comments',
   authenticate,
   authorize('ADMIN', 'EDITOR'),
-  validate(getCommentParamsSchema, 'params'),
-  validate(z.object({ status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'SPAM']) }), 'body'),
-  commentsController.moderate.bind(commentsController)
+  apiLimiter,
+  validate(adminListCommentsQuerySchema, 'query'),
+  commentsController.adminList.bind(commentsController)
+);
+
+// Admin: update comment status
+router.patch(
+  '/comments/:id/status',
+  authenticate,
+  authorize('ADMIN', 'EDITOR'),
+  apiLimiter,
+  validate(updateCommentStatusSchema, 'body'),
+  commentsController.updateStatus.bind(commentsController)
+);
+
+// Admin: delete comment (soft)
+router.delete(
+  '/comments/:id',
+  authenticate,
+  authorize('ADMIN', 'EDITOR'),
+  apiLimiter,
+  commentsController.delete.bind(commentsController)
 );
 
 export default router;

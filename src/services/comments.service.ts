@@ -1,54 +1,65 @@
-/**
- * Comments Service
- * Handles comment CRUD operations, moderation, and threading
- */
-
 import prisma from '../lib/prisma';
 import { AppError } from '../middleware/error.middleware';
-import { CommentStatus } from '@prisma/client';
+import { CommentStatus, PostStatus } from '@prisma/client';
+import { cacheService, cacheKeys } from './cache.service';
 
 export interface CreateCommentData {
-  postId: string;
+  slug: string;
+  content: string;
   parentId?: string;
   authorName: string;
   authorEmail: string;
   authorUrl?: string;
-  content: string;
   userId?: string;
 }
 
-export interface UpdateCommentData {
-  content?: string;
-  status?: CommentStatus;
-}
-
-export interface CommentQueryParams {
+export interface ListCommentsParams {
+  slug: string;
   page?: number;
   limit?: number;
-  postId?: string;
+}
+
+export interface AdminListCommentsParams {
+  page?: number;
+  limit?: number;
   status?: CommentStatus;
+  postId?: string;
+  postSlug?: string;
 }
 
 class CommentsService {
   /**
-   * Get all comments with filters
+   * Public: list approved comments for a post
    */
-  async getAll(params: CommentQueryParams) {
+  async listForPost(params: ListCommentsParams) {
     const page = params.page || 1;
     const limit = params.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const post = await prisma.post.findFirst({
+      where: { slug: params.slug, status: PostStatus.PUBLISHED, deletedAt: null },
+      select: { id: true },
+    });
 
-    if (params.postId) {
-      where.postId = params.postId;
+    if (!post) {
+      throw new AppError('POST_NOT_FOUND', 'Post not found or not published', 404);
     }
 
-    // For public endpoints, only show approved comments
-    if (params.status) {
-      where.status = params.status;
-    } else {
-      where.status = CommentStatus.APPROVED;
+    const where = {
+      postId: post.id,
+      status: CommentStatus.APPROVED,
+    };
+
+    const cacheKey =
+      process.env.NODE_ENV !== 'development'
+        ? cacheKeys.commentList(post.id, page, limit)
+        : null;
+
+    if (cacheKey) {
+      const cached = await cacheService.get<any>(cacheKey);
+      if (cached) {
+        return cached;
+      }
     }
 
     const [comments, total] = await Promise.all([
@@ -56,51 +67,130 @@ class CommentsService {
         where,
         skip,
         take: limit,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true,
-            },
-          },
-          replies: {
-            where: {
-              status: CommentStatus.APPROVED,
-            },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  avatar: true,
-                },
-              },
-            },
-            orderBy: {
-              createdAt: 'asc',
-            },
-          },
-          _count: {
-            select: {
-              replies: true,
-            },
-          },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          content: true,
+          authorName: true,
+          authorUrl: true,
+          parentId: true,
+          createdAt: true,
         },
-        orderBy: {
-          createdAt: 'desc',
+      }),
+      prisma.comment.count({ where }),
+    ]);
+
+    const result = {
+      data: comments,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+
+    if (cacheKey) {
+      await cacheService.set(cacheKey, result, 600); // 10 minutes
+    }
+
+    return result;
+  }
+
+  /**
+   * Public: create comment (pending by default)
+   */
+  async create(data: CreateCommentData) {
+    const post = await prisma.post.findFirst({
+      where: { slug: data.slug, status: PostStatus.PUBLISHED, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!post) {
+      throw new AppError('POST_NOT_FOUND', 'Post not found or not published', 404);
+    }
+
+    // Verify parent belongs to same post if provided
+    if (data.parentId) {
+      const parent = await prisma.comment.findFirst({
+        where: { id: data.parentId, postId: post.id },
+        select: { id: true },
+      });
+      if (!parent) {
+        throw new AppError('COMMENT_NOT_FOUND', 'Parent comment not found', 404);
+      }
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        postId: post.id,
+        parentId: data.parentId,
+        content: data.content,
+        authorName: data.authorName,
+        authorEmail: data.authorEmail,
+        authorUrl: data.authorUrl,
+        status: CommentStatus.PENDING,
+        userId: data.userId,
+      },
+    });
+
+    // Invalidate cache
+    await cacheService.invalidateResource('comment');
+    await cacheService.deletePattern(`comment:list:${post.id}:*`);
+
+    return comment;
+  }
+
+  /**
+   * Admin: list comments with filters
+   */
+  async adminList(params: AdminListCommentsParams) {
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (params.status) {
+      where.status = params.status;
+    }
+
+    if (params.postId) {
+      where.postId = params.postId;
+    }
+
+    if (params.postSlug) {
+      const post = await prisma.post.findUnique({
+        where: { slug: params.postSlug },
+        select: { id: true },
+      });
+      if (post) {
+        where.postId = post.id;
+      } else {
+        return {
+          data: [],
+          pagination: { page, limit, total: 0, totalPages: 0 },
+        };
+      }
+    }
+
+    const [comments, total] = await Promise.all([
+      prisma.comment.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          post: {
+            select: { id: true, title: true, slug: true },
+          },
         },
       }),
       prisma.comment.count({ where }),
     ]);
 
     return {
-      data: comments.map((comment) => ({
-        ...comment,
-        replyCount: comment._count.replies,
-      })),
+      data: comments,
       pagination: {
         page,
         limit,
@@ -111,189 +201,12 @@ class CommentsService {
   }
 
   /**
-   * Get comment by ID
+   * Admin: update comment status
    */
-  async getById(id: string) {
+  async updateStatus(id: string, status: CommentStatus) {
     const comment = await prisma.comment.findUnique({
       where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
-        },
-        replies: {
-          where: {
-            status: CommentStatus.APPROVED,
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
-        },
-        _count: {
-          select: {
-            replies: true,
-          },
-        },
-      },
-    });
-
-    if (!comment) {
-      throw new AppError('COMMENT_NOT_FOUND', 'Comment not found', 404);
-    }
-
-    return {
-      ...comment,
-      replyCount: comment._count.replies,
-    };
-  }
-
-  /**
-   * Create comment
-   */
-  async create(data: CreateCommentData) {
-    // Verify post exists
-    const post = await prisma.post.findFirst({
-      where: {
-        id: data.postId,
-        deletedAt: null,
-        status: 'PUBLISHED',
-      },
-    });
-
-    if (!post) {
-      throw new AppError('POST_NOT_FOUND', 'Post not found or not published', 404);
-    }
-
-    // If parentId provided, verify parent comment exists
-    if (data.parentId) {
-      const parent = await prisma.comment.findUnique({
-        where: { id: data.parentId },
-      });
-
-      if (!parent) {
-        throw new AppError('PARENT_COMMENT_NOT_FOUND', 'Parent comment not found', 404);
-      }
-
-      // Ensure parent is on the same post
-      if (parent.postId !== data.postId) {
-        throw new AppError('INVALID_PARENT', 'Parent comment must be on the same post', 400);
-      }
-    }
-
-    // Create comment
-    const comment = await prisma.comment.create({
-      data: {
-        postId: data.postId,
-        parentId: data.parentId,
-        authorName: data.authorName,
-        authorEmail: data.authorEmail,
-        authorUrl: data.authorUrl,
-        content: data.content,
-        userId: data.userId,
-        status: CommentStatus.PENDING, // Default to pending for moderation
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
-        },
-      },
-    });
-
-    return comment;
-  }
-
-  /**
-   * Update comment
-   */
-  async update(id: string, data: UpdateCommentData, userId: string, userRole: string) {
-    const comment = await prisma.comment.findUnique({
-      where: { id },
-    });
-
-    if (!comment) {
-      throw new AppError('COMMENT_NOT_FOUND', 'Comment not found', 404);
-    }
-
-    // Check permissions
-    // Admin/Editor can update any comment, users can only update their own
-    if (userRole !== 'ADMIN' && userRole !== 'EDITOR' && comment.userId !== userId) {
-      throw new AppError('FORBIDDEN', 'You can only update your own comments', 403);
-    }
-
-    const updated = await prisma.comment.update({
-      where: { id },
-      data: {
-        ...(data.content && { content: data.content }),
-        ...(data.status && { status: data.status }),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
-        },
-      },
-    });
-
-    return updated;
-  }
-
-  /**
-   * Delete comment (soft delete via status change)
-   */
-  async delete(id: string, userId: string, userRole: string) {
-    const comment = await prisma.comment.findUnique({
-      where: { id },
-    });
-
-    if (!comment) {
-      throw new AppError('COMMENT_NOT_FOUND', 'Comment not found', 404);
-    }
-
-    // Check permissions
-    if (userRole !== 'ADMIN' && userRole !== 'EDITOR' && comment.userId !== userId) {
-      throw new AppError('FORBIDDEN', 'You can only delete your own comments', 403);
-    }
-
-    // Mark as rejected instead of deleting
-    await prisma.comment.update({
-      where: { id },
-      data: {
-        status: CommentStatus.REJECTED,
-      },
-    });
-
-    return { message: 'Comment deleted successfully' };
-  }
-
-  /**
-   * Moderate comment (approve/reject/spam)
-   */
-  async moderate(id: string, status: CommentStatus) {
-    const comment = await prisma.comment.findUnique({
-      where: { id },
+      select: { id: true, status: true },
     });
 
     if (!comment) {
@@ -303,21 +216,39 @@ class CommentsService {
     const updated = await prisma.comment.update({
       where: { id },
       data: { status },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
-        },
-      },
     });
 
+    // Invalidate cache
+    await cacheService.invalidateResource('comment', id);
+    await cacheService.deletePattern('comment:list:*');
+
     return updated;
+  }
+
+  /**
+   * Admin: delete (soft delete)
+   */
+  async softDelete(id: string) {
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!comment) {
+      throw new AppError('COMMENT_NOT_FOUND', 'Comment not found', 404);
+    }
+
+    await prisma.comment.update({
+      where: { id },
+      data: { status: CommentStatus.REJECTED },
+    });
+
+    // Invalidate cache
+    await cacheService.invalidateResource('comment', id);
+    await cacheService.deletePattern('comment:list:*');
+
+    return { message: 'Comment deleted successfully' };
   }
 }
 
 export const commentsService = new CommentsService();
-

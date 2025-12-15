@@ -118,6 +118,8 @@ export const cacheKeys = {
   tag: (id: string) => `tag:${id}`,
   tagSlug: (slug: string) => `tag:slug:${slug}`,
   tagList: (page: number, limit: number) => `tag:list:${page}:${limit}`,
+  commentList: (slug: string, page: number, limit: number) =>
+    `comment:list:${slug}:${page}:${limit}`,
   product: (id: string) => `product:${id}`,
   productSlug: (slug: string) => `product:slug:${slug}`,
   productList: (page: number, limit: number) => `product:list:${page}:${limit}`,

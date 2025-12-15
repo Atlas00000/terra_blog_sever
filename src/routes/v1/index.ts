@@ -22,7 +22,7 @@ router.use('/tags', tagsRoutes);
 router.use('/products', productsRoutes);
 router.use('/media', mediaRoutes);
 router.use('/newsletter', newsletterRoutes);
-router.use('/comments', commentsRoutes);
+router.use('/', commentsRoutes);
 router.use('/contact', contactRoutes);
 router.use('/press', pressRoutes);
 
