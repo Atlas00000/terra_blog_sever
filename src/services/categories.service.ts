@@ -271,21 +271,25 @@ class CategoriesService {
     // Check if category exists
     const category = await prisma.category.findUnique({
       where: { id },
-      include: {
-        _count: {
-          select: {
-            posts: true,
-          },
-        },
-      },
     });
 
     if (!category) {
       throw new AppError('CATEGORY_NOT_FOUND', 'Category not found', 404);
     }
 
-    // Check if category has posts
-    if (category._count.posts > 0) {
+    // Check if category has active (non-deleted) posts
+    const activePostCount = await prisma.post.count({
+      where: {
+        deletedAt: null,
+        categories: {
+          some: {
+            id,
+          },
+        },
+      },
+    });
+
+    if (activePostCount > 0) {
       throw new AppError(
         'CATEGORY_HAS_POSTS',
         'Cannot delete category with associated posts',

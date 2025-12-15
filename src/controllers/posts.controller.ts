@@ -38,12 +38,27 @@ export class PostsController {
   }
 
   /**
-   * GET /api/v1/posts/id/:id (admin)
+   * GET /api/v1/posts/id/:id (admin/editor can access all, author can access own)
    */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const post = await postsService.getById(id);
+      const userId = (req as any).user?.userId;
+      const userRole = (req as any).user?.role;
+
+      if (!userId) {
+        res.status(401).json({
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Not authenticated',
+            statusCode: 401,
+            timestamp: new Date().toISOString(),
+          },
+        });
+        return;
+      }
+
+      const post = await postsService.getById(id, userId, userRole);
       res.json({ data: post });
     } catch (error) {
       next(error);

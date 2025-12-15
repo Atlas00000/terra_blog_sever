@@ -14,7 +14,12 @@ import { AppError } from './error.middleware';
  */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'test' ? 10000 : 100, // Very high limit in test environment
+  max:
+    process.env.NODE_ENV === 'test'
+      ? 10000
+      : process.env.NODE_ENV === 'development'
+      ? 1000 // Higher limit in development to avoid 429 during local testing
+      : 100, // Production limit
   message: {
     error: {
       code: 'TOO_MANY_REQUESTS',
@@ -33,12 +38,17 @@ export const apiLimiter = rateLimit({
 
 /**
  * Strict rate limiter for authentication endpoints
- * 5 requests per 15 minutes per IP
+ * 5 requests per 15 minutes per IP (production)
+ * 100 requests per 15 minutes per IP (development)
  * Disabled in test environment
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'test' ? 10000 : 5, // Very high limit in test environment
+  max: process.env.NODE_ENV === 'test' 
+    ? 10000 
+    : process.env.NODE_ENV === 'development' 
+    ? 500  // Higher limit for development
+    : 5,   // Strict limit for production
   message: {
     error: {
       code: 'TOO_MANY_AUTH_REQUESTS',

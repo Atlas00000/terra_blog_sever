@@ -62,9 +62,12 @@ class PostsService {
     );
 
     // Try to get from cache
-    const cached = await cacheService.get<any>(cacheKey);
-    if (cached) {
-      return cached;
+    // Skip cache in development to avoid stale content during edits
+    if (process.env.NODE_ENV !== 'development') {
+      const cached = await cacheService.get<any>(cacheKey);
+      if (cached) {
+        return cached;
+      }
     }
 
     const skip = (page - 1) * limit;
@@ -162,7 +165,7 @@ class PostsService {
     };
 
     // Cache result (only if no search, as search results change frequently)
-    if (!params.search) {
+    if (process.env.NODE_ENV !== 'development' && !params.search) {
       await cacheService.set(cacheKey, result, 1800); // 30 minutes
     }
 
@@ -175,9 +178,12 @@ class PostsService {
   async getBySlug(slug: string) {
     // Try cache first
     const cacheKey = `post:slug:${slug}`;
-    const cached = await cacheService.get<any>(cacheKey);
-    if (cached) {
-      return cached;
+    // Skip cache in development to avoid stale content during edits
+    if (process.env.NODE_ENV !== 'development') {
+      const cached = await cacheService.get<any>(cacheKey);
+      if (cached) {
+        return cached;
+      }
     }
 
     const post = await prisma.post.findFirst({
@@ -227,15 +233,17 @@ class PostsService {
     }
 
     // Cache the result
-    await cacheService.set(cacheKey, post, 3600); // 1 hour
+    if (process.env.NODE_ENV !== 'development') {
+      await cacheService.set(cacheKey, post, 3600); // 1 hour
+    }
 
     return post;
   }
 
   /**
-   * Get post by ID (for admin)
+   * Get post by ID (admin/editor can access all, author can access own)
    */
-  async getById(id: string) {
+  async getById(id: string, userId?: string, userRole?: string) {
     const post = await prisma.post.findFirst({
       where: {
         id,
@@ -277,6 +285,11 @@ class PostsService {
 
     if (!post) {
       throw new AppError('POST_NOT_FOUND', 'Post not found', 404);
+    }
+
+    // Check permissions (author can only access own posts, admin/editor can access all)
+    if (userId && userRole && userRole !== 'ADMIN' && userRole !== 'EDITOR' && post.authorId !== userId) {
+      throw new AppError('FORBIDDEN', 'You can only access your own posts', 403);
     }
 
     return post;
@@ -344,7 +357,7 @@ class PostsService {
 
     // Invalidate cache
     await cacheService.invalidateResource('post', post.id);
-    await cacheService.delete(`post:slug:${post.slug}`);
+    await cacheService.delete(`post:slug:${post.slug}`); // delete new slug cache
     await cacheService.deletePattern('post:list:*');
 
     return post;
@@ -470,7 +483,7 @@ class PostsService {
     // Invalidate cache
     await cacheService.invalidateResource('post', id);
     if (post.slug) {
-      await cacheService.delete(`post:slug:${post.slug}`);
+      await cacheService.delete(`post:slug:${post.slug}`); // delete slug cache
     }
     await cacheService.deletePattern('post:list:*');
 

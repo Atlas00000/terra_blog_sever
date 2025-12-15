@@ -23,11 +23,10 @@ router.get(
   postsController.getBySlug.bind(postsController)
 );
 
-// GET /api/v1/posts/id/:id (protected, for admin)
+// GET /api/v1/posts/id/:id (protected, admin/editor can access all, author can access own)
 router.get(
   '/id/:id',
   authenticate,
-  authorize('ADMIN', 'EDITOR'),
   postsController.getById.bind(postsController)
 );
 
