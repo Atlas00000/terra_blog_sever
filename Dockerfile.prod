@@ -3,33 +3,33 @@ FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
-COPY server/package*.json ./server/
-COPY shared/package*.json ./shared/
+COPY package.json package-lock.json* ./
+COPY server/package.json ./server/
+COPY shared/package.json ./shared/
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --include=dev
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY server/package*.json ./server/
-COPY shared/package*.json ./shared/
-
-# Install all dependencies (including dev dependencies for build)
-RUN npm ci
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy source code
 COPY server ./server
 COPY shared ./shared
 
-# Build the application
+# Build shared package
+WORKDIR /app/shared
+RUN npm run build
+
+# Build server
 WORKDIR /app/server
 RUN npm run build
 
@@ -43,21 +43,17 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs
 
-# Copy built application
-COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=deps --chown=nodejs:nodejs /app/server/node_modules ./server/node_modules
-COPY --from=deps --chown=nodejs:nodejs /app/shared/node_modules ./shared/node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/server/dist ./server/dist
-COPY --from=builder --chown=nodejs:nodejs /app/server/package.json ./server/package.json
-COPY --from=builder --chown=nodejs:nodejs /app/shared ./shared
+# Copy built application and production dependencies
+COPY --from=builder --chown=nodejs:nodejs /app/server/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/server/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/server/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/server/prisma ./prisma
 
 # Create logs directory
-RUN mkdir -p /app/server/logs && chown -R nodejs:nodejs /app/server/logs
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
 
 # Switch to non-root user
 USER nodejs
-
-WORKDIR /app/server
 
 # Expose port
 EXPOSE 3001

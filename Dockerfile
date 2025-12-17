@@ -1,8 +1,8 @@
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copy package files
@@ -11,7 +11,7 @@ COPY server/package.json ./server/
 COPY shared/package.json ./shared/
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --include=dev
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -33,17 +33,26 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nodejs
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nodejs
 
-COPY --from=builder /app/server/dist ./dist
-COPY --from=builder /app/server/node_modules ./node_modules
-COPY --from=builder /app/server/package.json ./
-COPY --from=builder /app/server/prisma ./prisma
+# Copy built application and dependencies
+COPY --from=builder --chown=nodejs:nodejs /app/server/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/server/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/server/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/server/prisma ./prisma
+
+# Create logs directory
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
 
 USER nodejs
 
 EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 CMD ["node", "dist/server.js"]
 

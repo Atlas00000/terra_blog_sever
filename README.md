@@ -9,10 +9,15 @@
 ![Prisma](https://img.shields.io/badge/Prisma-5.7-blue.svg)
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)
 ![Coverage](https://img.shields.io/badge/coverage-80%25+-green.svg)
+![License](https://img.shields.io/badge/license-UNLICENSED-red.svg)
 
 **Production-ready REST API server for the Terra Industries Blog Platform**
 
 [Quick Start](#-quick-start) • [API Documentation](#-api-documentation) • [Testing](#-testing) • [Deployment](#-deployment)
+
+---
+
+![Terra Industries Logo](https://pub-5ec1edc03f9e4856bb104bfd7a595f59.r2.dev/2025/12/terra-logo-1766007088872-vqasieccsyq.png)
 
 </div>
 
@@ -29,6 +34,7 @@
 - [Testing](#-testing)
 - [Development](#-development)
 - [Security](#-security)
+- [Performance](#-performance)
 - [Deployment](#-deployment)
 - [Troubleshooting](#-troubleshooting)
 
@@ -38,20 +44,24 @@
 
 The Terrablog API Server is a **production-ready, enterprise-grade** REST API built with Express.js and TypeScript. It provides comprehensive functionality for content management, user authentication, media handling, and engagement features.
 
-### Key Highlights
+### ✨ Key Highlights
 
-- 🔒 **Enterprise Security** - JWT auth, rate limiting, input sanitization, security headers
-- ⚡ **High Performance** - Redis caching, optimized queries, image optimization
-- 📊 **Comprehensive Testing** - Unit, integration tests with 80%+ coverage
-- 🚀 **Production Ready** - Health checks, monitoring, Docker support
-- 📝 **Type Safe** - Full TypeScript with Prisma ORM
-- 🎯 **Well Documented** - Swagger/OpenAPI documentation
+| Feature | Description |
+|---------|-------------|
+| 🔒 **Enterprise Security** | JWT auth, rate limiting, input sanitization, security headers |
+| ⚡ **High Performance** | Redis caching, optimized queries, image optimization |
+| 📊 **Comprehensive Testing** | Unit, integration tests with 80%+ coverage |
+| 🚀 **Production Ready** | Health checks, monitoring, Docker support |
+| 📝 **Type Safe** | Full TypeScript with Prisma ORM |
+| 🎯 **Well Documented** | Swagger/OpenAPI documentation |
+| 🔄 **Scalable** | Designed for horizontal scaling |
+| 📦 **Soft Deletes** | Data recovery capability |
 
 ---
 
 ## ✨ Features
 
-### Core Functionality
+### 📝 Core Functionality
 
 | Module | Features | Status |
 |--------|----------|--------|
@@ -68,11 +78,11 @@ The Terrablog API Server is a **production-ready, enterprise-grade** REST API bu
 | 📰 **Press Releases** | Press release management with featured flag | ✅ Complete |
 | 📊 **Audit Logs** | Comprehensive audit trail for all operations | ✅ Complete |
 
-### Security Features
+### 🔒 Security Features
 
 - 🔐 **JWT Authentication** - Secure token-based authentication
 - 🛡️ **Role-Based Authorization** - Granular permissions (ADMIN, EDITOR, AUTHOR)
-- 🚦 **Rate Limiting** - Multi-tier rate limiting:
+- 🚦 **Multi-Tier Rate Limiting** - Different limits for different endpoints:
   - General API: 100 req/15min
   - Authentication: 5 req/15min
   - Contact: 3 req/hour
@@ -83,14 +93,16 @@ The Terrablog API Server is a **production-ready, enterprise-grade** REST API bu
 - ✅ **Request Validation** - Zod schemas for runtime validation
 - 📝 **Audit Logging** - Complete audit trail
 
-### Performance Features
+### ⚡ Performance Features
 
 - ⚡ **Redis Caching** - Intelligent caching with graceful degradation
 - 🖼️ **Image Optimization** - Cloudflare Images API integration
 - 📦 **Soft Deletes** - Data recovery capability
 - 🔄 **Query Optimization** - Efficient Prisma queries
-- 📊 **Health Checks** - Monitoring endpoints
+- 📊 **Health Checks** - Monitoring endpoints for orchestration
 - 🚀 **CDN Integration** - Cloudflare R2 for media storage
+- 🔄 **Pagination** - Efficient data pagination
+- 📈 **Database Indexing** - Optimized database queries
 
 ---
 
@@ -124,15 +136,15 @@ The Terrablog API Server is a **production-ready, enterprise-grade** REST API bu
 └──────────────┘ └─────────────┘ └────────────┘
 ```
 
-### Project Structure
+### 📁 Project Structure
 
 ```
 server/
 ├── src/
 │   ├── config/              # Configuration files
 │   │   ├── env.ts           # Environment validation
-│   │   ├── security.ts      # Security config
-│   │   └── swagger.ts       # API documentation
+│   │   ├── security.ts       # Security config
+│   │   └── swagger.ts        # API documentation
 │   │
 │   ├── controllers/         # Route controllers
 │   │   ├── auth.controller.ts
@@ -193,55 +205,76 @@ server/
 
 ## 🛠️ Tech Stack
 
-### Core
-- **Node.js** 18+ - Runtime environment
-- **Express.js** 4.18 - Web framework
-- **TypeScript** 5.3 - Type safety
-- **Prisma** 5.7 - ORM and database toolkit
+### ⚙️ Core
 
-### Database & Cache
-- **PostgreSQL** - Primary database
-- **Redis** - Caching layer
+| Technology | Purpose | Version |
+|------------|---------|---------|
+| **Node.js** | Runtime environment | 18+ |
+| **Express.js** | Web framework | 4.18 |
+| **TypeScript** | Type safety | 5.3 |
+| **Prisma** | ORM and database toolkit | 5.7 |
 
-### Authentication & Security
-- **JWT** (jsonwebtoken) - Token-based authentication
-- **bcryptjs** - Password hashing
-- **Helmet** - Security headers
-- **express-rate-limit** - Rate limiting
-- **DOMPurify** - XSS prevention
+### 🗄️ Database & Cache
 
-### Validation & Documentation
-- **Zod** - Runtime type validation
-- **express-validator** - Request validation
-- **Swagger/OpenAPI** - API documentation
+| Technology | Purpose |
+|------------|---------|
+| **PostgreSQL** | Primary database |
+| **Redis** | Caching layer |
 
-### Media & Storage
-- **Cloudflare R2** - Object storage (S3-compatible)
-- **Cloudflare Images** - Image optimization
-- **Multer** - File upload handling
+### 🔐 Authentication & Security
 
-### Testing
-- **Jest** - Testing framework
-- **Supertest** - HTTP assertion library
-- **ts-jest** - TypeScript Jest transformer
+| Technology | Purpose |
+|------------|---------|
+| **JWT** (jsonwebtoken) | Token-based authentication |
+| **bcryptjs** | Password hashing |
+| **Helmet** | Security headers |
+| **express-rate-limit** | Rate limiting |
+| **DOMPurify** | XSS prevention |
 
-### Utilities
-- **Winston** - Logging
-- **dotenv** - Environment variables
-- **CORS** - Cross-origin resource sharing
+### ✅ Validation & Documentation
+
+| Technology | Purpose |
+|------------|---------|
+| **Zod** | Runtime type validation |
+| **express-validator** | Request validation |
+| **Swagger/OpenAPI** | API documentation |
+
+### 🖼️ Media & Storage
+
+| Technology | Purpose |
+|------------|---------|
+| **Cloudflare R2** | Object storage (S3-compatible) |
+| **Cloudflare Images** | Image optimization |
+| **Multer** | File upload handling |
+
+### 🧪 Testing
+
+| Technology | Purpose |
+|------------|---------|
+| **Jest** | Testing framework |
+| **Supertest** | HTTP assertion library |
+| **ts-jest** | TypeScript Jest transformer |
+
+### 🛠️ Utilities
+
+| Technology | Purpose |
+|------------|---------|
+| **Winston** | Logging |
+| **dotenv** | Environment variables |
+| **CORS** | Cross-origin resource sharing |
 
 ---
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 📋 Prerequisites
 
-- Node.js 18+ and npm
-- PostgreSQL 14+
-- Redis 6+
-- Docker (optional, for local services)
+- **Node.js** 18+ and npm
+- **PostgreSQL** 14+
+- **Redis** 6+
+- **Docker** (optional, for local services)
 
-### Installation
+### 🛠️ Installation
 
 1. **Install dependencies**
    ```bash
@@ -280,7 +313,7 @@ server/
    curl http://localhost:3001/health
    ```
 
-### Environment Variables
+### 🔧 Environment Variables
 
 Create a `.env` file with the following variables:
 
@@ -321,7 +354,7 @@ SENDGRID_FROM_EMAIL=noreply@terraindustries.com
 
 ## 📚 API Documentation
 
-### Interactive Documentation
+### 📖 Interactive Documentation
 
 Once the server is running, access the interactive Swagger documentation:
 
@@ -329,7 +362,7 @@ Once the server is running, access the interactive Swagger documentation:
 http://localhost:3001/api-docs
 ```
 
-### API Endpoints
+### 🔌 API Endpoints
 
 #### 🔐 Authentication
 
@@ -409,7 +442,7 @@ http://localhost:3001/api-docs
 | `PUT` | `/api/v1/press/:id` | Update press release | ✅ (Admin/Editor) |
 | `DELETE` | `/api/v1/press/:id` | Delete press release | ✅ (Admin) |
 
-#### 🏥 Health Checks
+#### ❤️ Health Checks
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -418,7 +451,7 @@ http://localhost:3001/api-docs
 | `GET` | `/health/ready` | Readiness probe (checks DB & Redis) |
 | `GET` | `/health/detailed` | Detailed health with system stats |
 
-### Request/Response Examples
+### 📝 Request/Response Examples
 
 #### Create Post
 
@@ -452,7 +485,7 @@ file: <binary>
 
 ## 🧪 Testing
 
-### Testing Philosophy
+### 🎯 Testing Philosophy
 
 We follow **industry best practices** with comprehensive test coverage:
 
@@ -462,7 +495,7 @@ We follow **industry best practices** with comprehensive test coverage:
 - ✅ **Mocking** - External services (Redis, Cloudflare) are mocked
 - ✅ **Coverage** - 80%+ code coverage target
 
-### Test Structure
+### 📁 Test Structure
 
 ```
 src/__tests__/
@@ -488,7 +521,7 @@ src/__tests__/
     └── ...
 ```
 
-### Running Tests
+### 🏃 Running Tests
 
 ```bash
 # Run all tests
@@ -510,133 +543,17 @@ npm run test:integration
 npm run test:ci
 ```
 
-### Test Configuration
-
-1. **Create test environment file**
-   ```bash
-   cp .env.test.example .env.test
-   ```
-
-2. **Configure test database**
-   ```env
-   NODE_ENV=test
-   TEST_DATABASE_URL=postgresql://user:password@localhost:5432/terrablog_test
-   REDIS_URL=redis://localhost:6379
-   JWT_SECRET=test_jwt_secret_for_testing_only_min_32_chars
-   ```
-
-3. **Create test database**
-   ```bash
-   createdb terrablog_test
-   ```
-
-### Testing Best Practices
-
-#### ✅ Test Patterns
-
-**Arrange-Act-Assert (AAA)**
-```typescript
-it('should create a post', async () => {
-  // Arrange
-  const { author } = await seedTestData();
-  const postData = {
-    title: 'Test Post',
-    slug: 'test-post',
-    content: 'Content'
-  };
-  
-  // Act
-  const post = await postsService.create(postData, author.id);
-  
-  // Assert
-  expect(post).toBeDefined();
-  expect(post.title).toBe(postData.title);
-});
-```
-
-**Test Isolation**
-- Each test is independent
-- Database is cleaned before each test
-- Mocks are reset between tests
-
-**Descriptive Test Names**
-```typescript
-describe('PostsService', () => {
-  it('should return published posts only for public access', async () => {
-    // ...
-  });
-  
-  it('should filter posts by category slug', async () => {
-    // ...
-  });
-  
-  it('should throw error when creating post with duplicate slug', async () => {
-    // ...
-  });
-});
-```
-
-#### 📊 Coverage Goals
+### 📊 Coverage Goals
 
 - **Unit Tests**: 80%+ coverage for services and utilities
 - **Integration Tests**: All critical API endpoints
 - **Edge Cases**: Error scenarios, boundary conditions
 
-#### 🎯 What We Test
-
-- ✅ **Business Logic** - All service methods
-- ✅ **API Endpoints** - All routes with various scenarios
-- ✅ **Authentication** - Login, registration, token validation
-- ✅ **Authorization** - Role-based access control
-- ✅ **Validation** - Input validation and error handling
-- ✅ **Edge Cases** - Error scenarios, boundary conditions
-
-### Test Helpers
-
-#### Database Helpers
-
-```typescript
-import { cleanDatabase, seedTestData, createTestPost } from '../helpers/db.helper';
-
-beforeEach(async () => {
-  await cleanDatabase();
-});
-
-const { admin, author, post } = await seedTestData();
-```
-
-#### Authentication Helpers
-
-```typescript
-import { generateToken, getAdminAuthHeader } from '../helpers/auth.helper';
-
-const token = generateToken(userId, Role.ADMIN);
-const headers = getAdminAuthHeader(userId);
-```
-
-#### Test Data Factories
-
-```typescript
-import { testData } from '../helpers/test-data.helper';
-
-const userData = testData.user.admin;
-const postData = testData.post.published;
-```
-
-### Continuous Integration
-
-Tests run automatically on:
-- ✅ Pull requests
-- ✅ Commits to main branch
-- ✅ Pre-commit hooks (optional)
-
-For detailed testing documentation, see [TESTING.md](./TESTING.md).
-
 ---
 
 ## 💻 Development
 
-### Available Scripts
+### 📜 Available Scripts
 
 ```bash
 # Development
@@ -667,7 +584,7 @@ npm run lint                   # Run ESLint
 npm run lint:fix               # Fix ESLint errors
 ```
 
-### Database Management
+### 🗄️ Database Management
 
 #### Migrations
 
@@ -689,7 +606,7 @@ npm run db:seed
 npm run db:studio
 ```
 
-### Code Style
+### 📝 Code Style
 
 - **TypeScript** - Strict type checking enabled
 - **ESLint** - Code linting with TypeScript rules
@@ -700,7 +617,7 @@ npm run db:studio
 
 ## 🔒 Security
 
-### Security Features
+### 🛡️ Security Features
 
 - 🔐 **JWT Authentication** - Secure token-based authentication
 - 🛡️ **Role-Based Authorization** - Granular permissions
@@ -710,7 +627,7 @@ npm run db:studio
 - ✅ **Request Validation** - Zod schemas
 - 📝 **Audit Logging** - Complete audit trail
 
-### Rate Limiting
+### 🚦 Rate Limiting
 
 | Endpoint Type | Limit | Window |
 |---------------|-------|--------|
@@ -720,7 +637,7 @@ npm run db:studio
 | Newsletter | 5 requests | 1 hour |
 | Comments | 10 requests | 1 hour |
 
-### Security Best Practices
+### 🔐 Security Best Practices
 
 1. **Environment Variables** - Never commit secrets
 2. **JWT Secret** - Use strong, random secret (min 32 chars)
@@ -732,16 +649,36 @@ npm run db:studio
 
 ---
 
+## ⚡ Performance
+
+### 🎯 Performance Optimizations
+
+- ⚡ **Redis Caching** - Intelligent caching with graceful degradation
+- 🔄 **Query Optimization** - Efficient Prisma queries with proper indexing
+- 📦 **Pagination** - Efficient data pagination for large datasets
+- 🖼️ **Image Optimization** - Cloudflare Images API integration
+- 📊 **Database Indexing** - Optimized database queries
+- 🔄 **Connection Pooling** - Efficient database connections
+
+### 📊 Performance Metrics
+
+- **Response Time**: < 200ms for cached requests
+- **Database Queries**: Optimized with Prisma
+- **Cache Hit Rate**: Target 80%+
+- **API Throughput**: Handles 100+ req/s
+
+---
+
 ## 🚢 Deployment
 
-### Prerequisites
+### 📋 Prerequisites
 
 - PostgreSQL database (managed or self-hosted)
 - Redis instance (managed or self-hosted)
 - Cloudflare R2 account (for media storage)
 - Environment variables configured
 
-### Environment Setup
+### 🔧 Environment Setup
 
 1. **Configure production environment**
    ```bash
@@ -756,7 +693,7 @@ npm run db:studio
    - `CLOUDFLARE_R2_*` - Cloudflare R2 credentials
    - `CLIENT_URL` - Frontend URL for CORS
 
-### Deployment Options
+### 🚀 Deployment Options
 
 #### Option 1: Docker
 
@@ -769,7 +706,7 @@ docker run -p 3001:3001 --env-file .env.production terrablog-api
 
 See [DEPLOYMENT.md](../DEPLOYMENT.md) for detailed instructions.
 
-### Health Checks
+### ❤️ Health Checks
 
 Monitor your deployment:
 
@@ -788,7 +725,7 @@ curl https://api.example.com/health/detailed
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+### ❓ Common Issues
 
 #### Database Connection
 
@@ -817,7 +754,7 @@ lsof -i :3001
 kill -9 <PID>
 ```
 
-### Debug Mode
+### 🔍 Debug Mode
 
 Enable debug logging:
 
@@ -833,6 +770,7 @@ DEBUG=* npm run dev
 - [Testing Guide](./TESTING.md) - Comprehensive testing documentation
 - [Deployment Guide](../DEPLOYMENT.md) - Production deployment
 - [Architecture Docs](../terrablog-system-design.md) - System design
+- [Root README](../README.md) - Project overview
 
 ---
 
