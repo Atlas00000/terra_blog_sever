@@ -24,11 +24,11 @@ COPY . .
 
 # Build shared package
 WORKDIR /app/shared
-RUN npm run build
+RUN pnpm run build
 
 # Build server
 WORKDIR /app
-RUN npm run build
+RUN pnpm run build
 
 # Production image
 FROM base AS runner
