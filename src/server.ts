@@ -56,9 +56,28 @@ app.use(errorHandler);
 
 const PORT = env.PORT;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📝 Environment: ${env.NODE_ENV}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+// Test database connection on startup
+import prisma from './lib/prisma';
+async function testDatabaseConnection() {
+  try {
+    await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ Database connected');
+  } catch (error: any) {
+    console.error('❌ Database connection failed:', error.message);
+    console.error('Database URL:', process.env.DATABASE_URL?.replace(/:[^:@]+@/, ':****@'));
+  }
+}
+
+// Test connections before starting server
+testDatabaseConnection().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📝 Environment: ${env.NODE_ENV}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  });
+}).catch((error) => {
+  console.error('❌ Failed to start server:', error);
+  process.exit(1);
 });
 
