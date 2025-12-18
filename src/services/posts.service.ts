@@ -450,6 +450,16 @@ class PostsService {
       },
     });
 
+    // Invalidate cache
+    await cacheService.invalidateResource('post', id);
+    if (existingPost.slug) {
+      await cacheService.delete(`post:slug:${existingPost.slug}`); // delete old slug cache
+    }
+    if (data.slug && data.slug !== existingPost.slug) {
+      await cacheService.delete(`post:slug:${data.slug}`); // delete new slug cache if changed
+    }
+    await cacheService.deletePattern('post:list:*');
+
     return post;
   }
 
