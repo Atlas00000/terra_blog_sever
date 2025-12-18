@@ -1,12 +1,14 @@
 # Development/Production Dockerfile for Terra Industries Blog API Server (Standalone)
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl openssl-dev
+RUN apt-get update && apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy package files
@@ -55,9 +57,14 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Install OpenSSL for Prisma (runtime requirement)
+RUN apt-get update && apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nodejs
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nodejs
 
 # Copy built application and dependencies
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
