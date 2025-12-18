@@ -10,11 +10,14 @@ RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json ./
 COPY shared/package.json ./shared/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Copy lockfile if it exists (optional)
+COPY pnpm-lock.yaml* ./
+
+# Install dependencies (use --frozen-lockfile if lockfile exists, otherwise regular install)
+RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -22,8 +25,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build shared package
+# Install shared package dependencies (if using workspace, this might be needed)
 WORKDIR /app/shared
+RUN pnpm install --frozen-lockfile || pnpm install
+
+# Build shared package
 RUN pnpm run build
 
 # Build server

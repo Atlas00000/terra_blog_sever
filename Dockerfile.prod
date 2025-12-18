@@ -23,14 +23,17 @@ RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm ins
 FROM base AS builder
 WORKDIR /app
 
-# Copy dependencies
+# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy source code
 COPY . .
 
-# Build shared package
+# Install shared package dependencies (if using workspace, this might be needed)
 WORKDIR /app/shared
+RUN pnpm install --frozen-lockfile || pnpm install
+
+# Build shared package
 RUN pnpm run build
 
 # Build server
