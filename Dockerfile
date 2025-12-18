@@ -1,3 +1,4 @@
+# Development/Production Dockerfile for Terra Industries Blog API Server (Standalone)
 FROM node:20-alpine AS base
 
 # Install dependencies only when needed
@@ -7,7 +8,6 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-COPY server/package.json ./server/
 COPY shared/package.json ./shared/
 
 # Install dependencies
@@ -24,7 +24,7 @@ WORKDIR /app/shared
 RUN npm run build
 
 # Build server
-WORKDIR /app/server
+WORKDIR /app
 RUN npm run build
 
 # Production image
@@ -38,10 +38,10 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs
 
 # Copy built application and dependencies
-COPY --from=builder --chown=nodejs:nodejs /app/server/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/server/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/server/package.json ./package.json
-COPY --from=builder --chown=nodejs:nodejs /app/server/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 
 # Create logs directory
 RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
