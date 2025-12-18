@@ -6,7 +6,7 @@ import {
   createProductSchema,
   updateProductSchema,
   getProductsQuerySchema,
-} from '../../../../shared/src/schemas/product.schema';
+} from '../../../shared/src/schemas/product.schema';
 
 const router = Router();
 

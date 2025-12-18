@@ -8,7 +8,7 @@ import {
   updatePreferencesSchema,
   unsubscribeSchema,
   getNewsletterQuerySchema,
-} from '../../../../shared/src/schemas/newsletter.schema';
+} from '../../../shared/src/schemas/newsletter.schema';
 import { z } from 'zod';
 
 const router = Router();

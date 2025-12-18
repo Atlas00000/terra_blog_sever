@@ -6,7 +6,7 @@ import {
   createPostSchema,
   updatePostSchema,
   getPostsQuerySchema,
-} from '../../../../shared/src/schemas/post.schema';
+} from '../../../shared/src/schemas/post.schema';
 
 const router = Router();
 

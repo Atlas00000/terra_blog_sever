@@ -6,7 +6,7 @@ import {
   createCategorySchema,
   updateCategorySchema,
   getCategoriesQuerySchema,
-} from '../../../../shared/src/schemas/category.schema';
+} from '../../../shared/src/schemas/category.schema';
 
 const router = Router();
 

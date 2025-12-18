@@ -6,7 +6,7 @@ import {
   createPressReleaseSchema,
   updatePressReleaseSchema,
   getPressReleasesQuerySchema,
-} from '../../../../shared/src/schemas/press.schema';
+} from '../../../shared/src/schemas/press.schema';
 
 const router = Router();
 

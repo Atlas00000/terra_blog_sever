@@ -9,7 +9,7 @@ import {
   adminListCommentsQuerySchema,
   updateCommentStatusSchema,
   postSlugParamsSchema,
-} from '../../../../shared/src/schemas/comment.schema';
+} from '../../../shared/src/schemas/comment.schema';
 
 const router = Router({ mergeParams: true });
 

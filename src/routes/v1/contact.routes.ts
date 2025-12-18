@@ -8,7 +8,7 @@ import {
   getContactQuerySchema,
   getContactParamsSchema,
   updateContactStatusSchema,
-} from '../../../../shared/src/schemas/contact.schema';
+} from '../../../shared/src/schemas/contact.schema';
 
 const router = Router();
 

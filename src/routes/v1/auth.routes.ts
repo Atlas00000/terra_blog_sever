@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authController } from '../../controllers/auth.controller';
 import { validate } from '../../middleware/validation.middleware';
-import { loginSchema, createUserSchema } from '../../../../shared/src/schemas/user.schema';
+import { loginSchema, createUserSchema } from '../../../shared/src/schemas/user.schema';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authLimiter } from '../../middleware/rate-limit.middleware';
 

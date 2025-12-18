@@ -6,7 +6,7 @@ import {
   createTagSchema,
   updateTagSchema,
   getTagsQuerySchema,
-} from '../../../../shared/src/schemas/tag.schema';
+} from '../../../shared/src/schemas/tag.schema';
 
 const router = Router();
 
