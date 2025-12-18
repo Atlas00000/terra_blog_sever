@@ -1,17 +1,20 @@
 # Development/Production Dockerfile for Terra Industries Blog API Server (Standalone)
 FROM node:20-alpine AS base
 
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 # Install dependencies only when needed
 FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json pnpm-lock.yaml ./
 COPY shared/package.json ./shared/
 
 # Install dependencies
-RUN npm ci --include=dev
+RUN pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
