@@ -37,9 +37,13 @@ RUN pnpm install --frozen-lockfile || pnpm install
 # Copy source code
 COPY . .
 
-# Build shared package (use pnpm exec to find tsc in root node_modules)
+# Generate Prisma client (needed for shared types that import from @prisma/client)
+WORKDIR /app
+RUN pnpm exec prisma generate || npx prisma generate
+
+# Build shared package (tsc is in root node_modules/.bin)
 WORKDIR /app/shared
-RUN pnpm exec tsc || ../node_modules/.bin/tsc
+RUN ../node_modules/.bin/tsc
 
 # Build server
 WORKDIR /app
