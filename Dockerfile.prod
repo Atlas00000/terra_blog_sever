@@ -37,9 +37,9 @@ RUN pnpm install --frozen-lockfile || pnpm install
 # Copy source code
 COPY . .
 
-# Build shared package
+# Build shared package (use pnpm exec to find tsc in root node_modules)
 WORKDIR /app/shared
-RUN pnpm run build
+RUN pnpm exec tsc || ../node_modules/.bin/tsc
 
 # Build server
 WORKDIR /app
