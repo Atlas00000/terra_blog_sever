@@ -11,6 +11,7 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "import-posts": "tsx src/scripts/import-posts.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "lint": "eslint src --ext .ts",
